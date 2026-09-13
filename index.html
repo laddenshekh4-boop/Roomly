@@ -1,29 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="description" content="Roomly — find rooms, PGs and flats.">
-<title>Roomly — Find Your Room</title><link rel="stylesheet" href="style.css">
+<title>Roomly V4 — Find Your Room</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
 </head>
 <body>
-<header><div class="logo">🏠 Roomly</div><nav><a href="#saved">❤️ Saved</a><a href="#dashboard">Dashboard</a><a href="#rooms">Explore</a><a href="#saved">❤️ Saved</a><a href="#how">How it works</a><a href="#owner">List a Room</a></nav><button id="themeBtn" class="theme" onclick="toggleTheme()">🌙</button></header>
+<header>
+  <div class="logo">🏠 Roomly <small>V4</small></div>
+  <nav>
+    <a href="#rooms">Explore</a><a href="#saved">❤️ Saved</a><a href="#dashboard">Dashboard</a><a href="#owner">List a Room</a>
+  </nav>
+  <div class="head-actions"><button class="theme" onclick="toggleTheme()">🌙</button><button class="login-mini" onclick="openAuth()">Login</button></div>
+</header>
 
 <section class="hero">
-<div><span class="pill">ROOMS • PG • 1BHK • SHARED</span><h1>Find a room you'll<br><span>love to live in.</span></h1><p>Search affordable rooms, PGs and flats by area, budget, type and facilities.</p><div class="trust">✓ Easy search &nbsp; ✓ Direct WhatsApp &nbsp; ✓ Save favourites</div></div>
-<div class="search-box"><h2>Find your next place</h2><label>Location / Area</label><input id="location" placeholder="e.g. Whitefield, Bengaluru"><div class="row"><div><label>Max Rent ₹</label><input id="maxRent" type="number" placeholder="10000"></div><div><label>Room Type</label><select id="type"><option value="">Any</option><option>Single Room</option><option>Shared Room</option><option>PG</option><option>1BHK</option><option>2BHK</option></select></div></div><div class="checks"><label><input class="facility" value="Wi-Fi" type="checkbox"> Wi-Fi</label><label><input class="facility" value="AC" type="checkbox"> AC</label><label><input class="facility" value="Attached Bathroom" type="checkbox"> Attached Bath</label><label><input class="facility" value="Parking" type="checkbox"> Parking</label><label><input class="facility" value="Food" type="checkbox"> Food</label></div><button onclick="searchRooms()">🔍 Find Rooms</button><button class="secondary" onclick="clearFilters()">Reset</button></div>
+<div class="hero-copy">
+  <span class="pill">REAL ROOM SEARCH • OWNER LISTINGS</span>
+  <h1>Find a room you'll<br><span>love to live in.</span></h1>
+  <p>Search rooms, PGs and flats. Save favourites and contact owners directly.</p>
+  <div class="trust">✓ User accounts &nbsp; ✓ Online listings &nbsp; ✓ Favourites &nbsp; ✓ Reports</div>
+</div>
+<div class="search-box">
+  <h2>Find your next place</h2>
+  <label>Location / Area</label><input id="location" placeholder="e.g. Whitefield, Bengaluru">
+  <div class="row">
+    <div><label>Max Rent ₹</label><input id="maxRent" type="number" min="0" placeholder="10000"></div>
+    <div><label>Room Type</label><select id="type"><option value="">Any</option><option>Single Room</option><option>Shared Room</option><option>PG</option><option>1BHK</option><option>2BHK</option></select></div>
+  </div>
+  <div class="checks">
+    <label><input class="facility" value="Wi-Fi" type="checkbox"> Wi-Fi</label>
+    <label><input class="facility" value="AC" type="checkbox"> AC</label>
+    <label><input class="facility" value="Attached Bathroom" type="checkbox"> Attached Bath</label>
+    <label><input class="facility" value="Parking" type="checkbox"> Parking</label>
+    <label><input class="facility" value="Food" type="checkbox"> Food</label>
+  </div>
+  <button onclick="searchRooms()">🔍 Find Rooms</button><button class="secondary" onclick="clearFilters()">Reset</button>
+</div>
 </section>
 
-<main id="rooms"><div class="section-head"><div><h2>Available Rooms</h2><p id="resultText"></p></div><select id="sort" onchange="render()"><option value="recommended">Recommended</option><option value="low">Rent: Low to High</option><option value="high">Rent: High to Low</option></select></div><div id="roomGrid" class="grid"></div></main>
+<main id="rooms">
+<div class="section-head"><div><h2>Available Rooms</h2><p id="resultText">Loading listings...</p></div>
+<select id="sort" onchange="render()"><option value="recommended">Recommended</option><option value="low">Rent: Low to High</option><option value="high">Rent: High to Low</option></select></div>
+<div id="roomGrid" class="grid"></div>
+</main>
 
-<section id="saved" class="saved"><h2>❤️ My Saved Rooms</h2><p>Saved on this device.</p><div id="savedGrid" class="grid"></div></section>
+<section id="saved" class="saved"><h2>❤️ My Saved Rooms</h2><p>Saved rooms for your account.</p><div id="savedGrid" class="grid"></div></section>
 
-<section id="dashboard" class="dashboard"><h2>📊 My Dashboard</h2><div class="stats"><div><strong id="statListings">0</strong><span>My Listings</span></div><div><strong id="statSaved">0</strong><span>Saved Rooms</span></div><div><strong id="statReports">0</strong><span>Reports</span></div></div><p class="muted">V3 demo data is stored on this device. Online multi-user database can be connected next.</p></section>
+<section id="dashboard" class="dashboard">
+<h2>📊 My Dashboard</h2><div class="userbar"><span id="userStatus">Not logged in</span><button onclick="openAuth()">Login / Sign up</button></div>
+<div class="stats"><div><strong id="statListings">0</strong><span>My Listings</span></div><div><strong id="statSaved">0</strong><span>Saved Rooms</span></div><div><strong id="statReports">0</strong><span>Reports</span></div></div>
+</section>
 
-<section id="how" class="how"><h2>How Roomly works</h2><div class="steps"><div><b>1</b><h3>Search</h3><p>Choose area, budget and room type.</p></div><div><b>2</b><h3>Compare</h3><p>Check photos, rent and facilities.</p></div><div><b>3</b><h3>Contact</h3><p>Call or WhatsApp the owner.</p></div></div></section>
+<section id="owner" class="owner"><h2>🏠 List your room</h2><p>Login is required to publish an online listing.</p>
+<form id="listingForm">
+<div class="row"><input required id="fTitle" placeholder="Listing title"><input required id="fArea" placeholder="Area, City"></div>
+<div class="row"><input required id="fRent" type="number" min="0" placeholder="Monthly rent ₹"><input id="fDeposit" type="number" min="0" placeholder="Security deposit ₹"></div>
+<div class="row"><select id="fType"><option>Single Room</option><option>Shared Room</option><option>PG</option><option>1BHK</option><option>2BHK</option></select><input id="fImage" placeholder="Photo URL (optional)"></div>
+<input required id="fPhone" placeholder="WhatsApp number e.g. 919876543210">
+<input id="fFacilities" placeholder="Facilities: Wi-Fi, AC, Parking, Food">
+<textarea id="fDesc" placeholder="Short description"></textarea>
+<button>Publish Online Listing</button></form></section>
 
-<section id="owner" class="owner"><h2>🏠 List your room</h2><p>Publish a room listing from this device.</p><form id="listingForm"><div class="row"><input required id="fTitle" placeholder="Listing title"><input required id="fArea" placeholder="Area, City"></div><div class="row"><input required id="fRent" type="number" placeholder="Monthly rent ₹"><input id="fDeposit" type="number" placeholder="Security deposit ₹"></div><div class="row"><select id="fType"><option>Single Room</option><option>Shared Room</option><option>PG</option><option>1BHK</option><option>2BHK</option></select><input id="fImage" placeholder="Photo URL (optional)"></div><input required id="fPhone" placeholder="WhatsApp number e.g. 919876543210"><input id="fFacilities" placeholder="Facilities: Wi-Fi, AC, Parking, Food"><textarea id="fDesc" placeholder="Short description"></textarea><button>Publish Listing</button></form></section>
+<div id="modal" class="modal" onclick="closeModal(event)"><div class="modal-card" onclick="event.stopPropagation()">
+<button class="close" onclick="closeModal()">×</button><img id="modalImg"><div class="modal-body">
+<div id="modalType" class="muted"></div><h2 id="modalTitle"></h2><p id="modalArea" class="muted"></p><div id="modalPrice" class="price"></div><div id="modalTags" class="tags"></div><p id="modalDesc"></p><p id="modalDeposit" class="muted"></p>
+<div class="modal-actions"><a id="modalWa" class="wa" target="_blank">💬 WhatsApp</a><a id="modalCall" class="call">📞 Call</a><button id="modalSave" class="save">♡ Save</button><button id="modalReport" class="report">🚩 Report</button></div>
+</div></div></div>
 
-<div id="modal" class="modal" onclick="closeModal(event)"><div class="modal-card" onclick="event.stopPropagation()"><button class="close" onclick="closeModal()">×</button><img id="modalImg"><div class="modal-body"><div id="modalType" class="muted"></div><h2 id="modalTitle"></h2><p id="modalArea" class="muted"></p><div id="modalPrice" class="price"></div><div id="modalTags" class="tags"></div><p id="modalDesc"></p><p id="modalDeposit" class="muted"></p><div class="modal-actions"><a id="modalWa" class="wa" target="_blank">💬 WhatsApp</a><a id="modalCall" class="call">📞 Call</a><button id="modalSave" class="save">♡ Save</button></div></div></div></div>
-<footer>© 2026 Roomly • Find a better place to live</footer>
-<script src="script.js"></script><div id="reportBox" class="report-box"><h3>🚩 Report listing</h3><p>Choose a reason:</p><select id="reportReason"><option>Suspicious / fake listing</option><option>Wrong price or details</option><option>Inappropriate content</option><option>Other</option></select><button onclick="submitReport()">Submit Report</button><button class="secondary" onclick="closeReport()">Cancel</button></div>
-</body></html>
+<div id="authModal" class="modal"><div class="auth-card"><button class="close" onclick="closeAuth()">×</button>
+<h2 id="authTitle">Login to Roomly</h2><p id="authHint" class="muted">Use email and password.</p>
+<input id="authEmail" type="email" placeholder="Email"><input id="authPassword" type="password" placeholder="Password">
+<button onclick="submitAuth()">Continue</button><button class="secondary" onclick="switchAuth()">Create account</button><p id="authMsg" class="auth-msg"></p></div></div>
+
+<footer>© 2026 Roomly V4 • Find a better place to live</footer>
+<script src="script.js"></script>
+</body>
+</html>
