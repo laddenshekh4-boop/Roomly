@@ -1,66 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Roomly — Find Your Room</title>
-<link rel="stylesheet" href="style.css">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Roomly — find rooms, PGs and flats.">
+<title>Roomly — Find Your Room</title><link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header>
-  <div class="logo">🏠 Roomly</div>
-  <nav><a href="#rooms">Rooms</a><a href="#how">How it works</a><a href="#owner">List a Room</a></nav>
-</header>
+<header><div class="logo">🏠 Roomly</div><nav><a href="#rooms">Explore</a><a href="#saved">❤️ Saved</a><a href="#how">How it works</a><a href="#owner">List a Room</a></nav><button id="themeBtn" class="theme" onclick="toggleTheme()">🌙</button></header>
 
 <section class="hero">
-  <div>
-    <span class="pill">🏠 Rooms • PG • 1BHK • Shared</span>
-    <h1>Find a room you'll<br><span>love to live in.</span></h1>
-    <p>Search affordable rooms, PGs and flats by area, budget and facilities.</p>
-  </div>
-  <div class="search-box">
-    <label>Location / Area</label>
-    <input id="location" placeholder="e.g. Whitefield, Bengaluru">
-    <div class="row">
-      <div><label>Max Rent ₹</label><input id="maxRent" type="number" placeholder="10000"></div>
-      <div><label>Room Type</label>
-        <select id="type"><option value="">Any</option><option>Single Room</option><option>Shared Room</option><option>PG</option><option>1BHK</option><option>2BHK</option></select>
-      </div>
-    </div>
-    <div class="checks">
-      <label><input class="facility" value="Wi-Fi" type="checkbox"> Wi-Fi</label>
-      <label><input class="facility" value="AC" type="checkbox"> AC</label>
-      <label><input class="facility" value="Attached Bathroom" type="checkbox"> Attached Bath</label>
-      <label><input class="facility" value="Parking" type="checkbox"> Parking</label>
-    </div>
-    <button onclick="searchRooms()">🔍 Find Rooms</button>
-  </div>
+<div><span class="pill">ROOMS • PG • 1BHK • SHARED</span><h1>Find a room you'll<br><span>love to live in.</span></h1><p>Search affordable rooms, PGs and flats by area, budget, type and facilities.</p><div class="trust">✓ Easy search &nbsp; ✓ Direct WhatsApp &nbsp; ✓ Save favourites</div></div>
+<div class="search-box"><h2>Find your next place</h2><label>Location / Area</label><input id="location" placeholder="e.g. Whitefield, Bengaluru"><div class="row"><div><label>Max Rent ₹</label><input id="maxRent" type="number" placeholder="10000"></div><div><label>Room Type</label><select id="type"><option value="">Any</option><option>Single Room</option><option>Shared Room</option><option>PG</option><option>1BHK</option><option>2BHK</option></select></div></div><div class="checks"><label><input class="facility" value="Wi-Fi" type="checkbox"> Wi-Fi</label><label><input class="facility" value="AC" type="checkbox"> AC</label><label><input class="facility" value="Attached Bathroom" type="checkbox"> Attached Bath</label><label><input class="facility" value="Parking" type="checkbox"> Parking</label><label><input class="facility" value="Food" type="checkbox"> Food</label></div><button onclick="searchRooms()">🔍 Find Rooms</button><button class="secondary" onclick="clearFilters()">Reset</button></div>
 </section>
 
-<main id="rooms">
-  <div class="section-head"><div><h2>Available Rooms</h2><p id="resultText">Showing rooms you may like</p></div><select id="sort" onchange="render()"><option value="recommended">Recommended</option><option value="low">Rent: Low to High</option><option value="high">Rent: High to Low</option></select></div>
-  <div id="roomGrid" class="grid"></div>
-</main>
+<main id="rooms"><div class="section-head"><div><h2>Available Rooms</h2><p id="resultText"></p></div><select id="sort" onchange="render()"><option value="recommended">Recommended</option><option value="low">Rent: Low to High</option><option value="high">Rent: High to Low</option></select></div><div id="roomGrid" class="grid"></div></main>
 
-<section id="how" class="how">
-<h2>How Roomly works</h2>
-<div class="steps"><div><b>1</b><h3>Search</h3><p>Choose your area, budget and room type.</p></div><div><b>2</b><h3>Compare</h3><p>Check photos, rent, facilities and location.</p></div><div><b>3</b><h3>Contact</h3><p>Call or WhatsApp the owner directly.</p></div></div>
-</section>
+<section id="saved" class="saved"><h2>❤️ My Saved Rooms</h2><p>Saved on this device.</p><div id="savedGrid" class="grid"></div></section>
 
-<section id="owner" class="owner">
-<h2>🏠 List your room</h2><p>Add a property and it will appear instantly on this device.</p>
-<form id="listingForm">
-<div class="row"><input required id="fTitle" placeholder="Listing title"><input required id="fArea" placeholder="Area, City"></div>
-<div class="row"><input required id="fRent" type="number" placeholder="Monthly rent ₹"><select id="fType"><option>Single Room</option><option>Shared Room</option><option>PG</option><option>1BHK</option><option>2BHK</option></select></div>
-<input id="fImage" placeholder="Photo URL (optional)">
-<input id="fPhone" required placeholder="WhatsApp number e.g. 919876543210">
-<input id="fFacilities" placeholder="Facilities: Wi-Fi, AC, Parking">
-<textarea id="fDesc" placeholder="Short description"></textarea>
-<button type="submit">Publish Listing</button>
-</form>
-</section>
+<section id="how" class="how"><h2>How Roomly works</h2><div class="steps"><div><b>1</b><h3>Search</h3><p>Choose area, budget and room type.</p></div><div><b>2</b><h3>Compare</h3><p>Check photos, rent and facilities.</p></div><div><b>3</b><h3>Contact</h3><p>Call or WhatsApp the owner.</p></div></div></section>
 
+<section id="owner" class="owner"><h2>🏠 List your room</h2><p>Publish a room listing from this device.</p><form id="listingForm"><div class="row"><input required id="fTitle" placeholder="Listing title"><input required id="fArea" placeholder="Area, City"></div><div class="row"><input required id="fRent" type="number" placeholder="Monthly rent ₹"><input id="fDeposit" type="number" placeholder="Security deposit ₹"></div><div class="row"><select id="fType"><option>Single Room</option><option>Shared Room</option><option>PG</option><option>1BHK</option><option>2BHK</option></select><input id="fImage" placeholder="Photo URL (optional)"></div><input required id="fPhone" placeholder="WhatsApp number e.g. 919876543210"><input id="fFacilities" placeholder="Facilities: Wi-Fi, AC, Parking, Food"><textarea id="fDesc" placeholder="Short description"></textarea><button>Publish Listing</button></form></section>
+
+<div id="modal" class="modal" onclick="closeModal(event)"><div class="modal-card" onclick="event.stopPropagation()"><button class="close" onclick="closeModal()">×</button><img id="modalImg"><div class="modal-body"><div id="modalType" class="muted"></div><h2 id="modalTitle"></h2><p id="modalArea" class="muted"></p><div id="modalPrice" class="price"></div><div id="modalTags" class="tags"></div><p id="modalDesc"></p><p id="modalDeposit" class="muted"></p><div class="modal-actions"><a id="modalWa" class="wa" target="_blank">💬 WhatsApp</a><a id="modalCall" class="call">📞 Call</a><button id="modalSave" class="save">♡ Save</button></div></div></div></div>
 <footer>© 2026 Roomly • Find a better place to live</footer>
-<script src="script.js"></script>
-</body>
-</html>
+<script src="script.js"></script></body></html>
