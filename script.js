@@ -1,104 +1,41 @@
 const DEMO_ROOMS=[
-{id:1,title:"Furnished Single Room",area:"Whitefield, Bengaluru",rent:7500,deposit:15000,type:"Single Room",image_url:"https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=80",facilities:["Wi-Fi","Attached Bathroom","Parking"],phone:"919876543210",description:"Clean furnished room close to offices and public transport.",verified:true},
-{id:2,title:"Modern PG for Working Professionals",area:"HSR Layout, Bengaluru",rent:9000,deposit:18000,type:"PG",image_url:"https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=80",facilities:["Wi-Fi","AC","Food"],phone:"919876543211",description:"Comfortable PG with modern facilities.",verified:true},
-{id:3,title:"Affordable Shared Room",area:"Electronic City, Bengaluru",rent:5000,deposit:10000,type:"Shared Room",image_url:"https://images.unsplash.com/photo-1560185008-b033106af5c3?auto=format&fit=crop&w=900&q=80",facilities:["Wi-Fi","Parking"],phone:"919876543212",description:"Budget-friendly shared room near IT parks.",verified:false},
-{id:4,title:"Cozy 1BHK Apartment",area:"Marathahalli, Bengaluru",rent:12500,deposit:25000,type:"1BHK",image_url:"https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=900&q=80",facilities:["AC","Attached Bathroom","Parking"],phone:"919876543213",description:"Private 1BHK suitable for working professionals.",verified:true}];
-
-let supabaseClient=null,user=null,rooms=[],filtered=[],authMode="login";
-
-function configured(){return window.ROOMLY_SUPABASE_URL && !window.ROOMLY_SUPABASE_URL.startsWith("PASTE_") && window.ROOMLY_SUPABASE_KEY && !window.ROOMLY_SUPABASE_KEY.startsWith("PASTE_")}
-if(configured() && window.supabase) supabaseClient=window.supabase.createClient(window.ROOMLY_SUPABASE_URL,window.ROOMLY_SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-
-const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
-const localSaved=()=>JSON.parse(localStorage.getItem("roomlySaved")||"[]").map(Number);
-
-async function init(){
- if(supabaseClient){
-  const s=await supabaseClient.auth.getSession(); user=s.data.session?.user||null;
-  supabaseClient.auth.onAuthStateChange((_e,session)=>{user=session?.user||null;updateUserUI();loadRooms();});
-  await loadRooms();
- }else{
-  rooms=JSON.parse(localStorage.getItem("roomlyRooms")||"null")||DEMO_ROOMS;
-  filtered=[...rooms];render();updateUserUI();
- }
-}
-
-async function loadRooms(){
- if(!supabaseClient){render();return}
- const {data,error}=await supabaseClient.from("rooms").select("*").eq("status","active").order("created_at",{ascending:false});
- if(error){console.error(error);rooms=DEMO_ROOMS;toast("Database setup not finished — showing demo rooms.");}
- else rooms=data||[];
- filtered=[...rooms];render();
-}
-
-function card(r){
- const p=String(r.phone||"").replace(/\D/g,""),saved=localSaved().includes(+r.id);
- const wa=`https://wa.me/${p}?text=${encodeURIComponent("Hi, I found your room on Roomly: "+r.title+" in "+r.area+". Is it available?")}`;
- const fac=r.facilities||[];
- return `<article class="card"><img src="${esc(r.image_url)}" alt="${esc(r.title)}" onclick="openRoom('${r.id}')"><div class="card-body"><div class="muted">${esc(r.type)}${r.verified?" • ✓ Verified":""}</div><h3>${esc(r.title)}</h3><div class="muted">📍 ${esc(r.area)}</div><p class="price">₹${Number(r.rent).toLocaleString("en-IN")} <small>/month</small></p><div class="tags">${fac.map(x=>`<span class="tag">${esc(x)}</span>`).join("")}</div><p class="muted">${esc(r.description||"")}</p><div class="actions"><a class="wa" target="_blank" href="${wa}">💬 WhatsApp</a><button class="save" onclick="saveRoom('${r.id}')">${saved?"♥ Saved":"♡ Save"}</button><button class="call" onclick="callOwner('${p}')">📞</button></div></div></article>`;
-}
-function render(){
- const s=document.getElementById("sort").value,list=[...filtered].sort((a,b)=>s==="low"?a.rent-b.rent:s==="high"?b.rent-a.rent:0);
- document.getElementById("roomGrid").innerHTML=list.length?list.map(card).join(""):"<p class='muted'>No matching rooms found.</p>";
- document.getElementById("resultText").textContent=`${list.length} room${list.length!==1?"s":""} found`;
- renderSaved();updateStats();
-}
-async function renderSaved(){
- if(!user){document.getElementById("savedGrid").innerHTML="<p class='muted'>Login to sync your saved rooms.</p>";return}
- const {data,error}=await supabaseClient.from("favorites").select("room_id").eq("user_id",user.id);
- if(error){document.getElementById("savedGrid").innerHTML="<p class='muted'>Could not load saved rooms.</p>";return}
- const ids=(data||[]).map(x=>String(x.room_id)),list=rooms.filter(r=>ids.includes(String(r.id)));
- document.getElementById("savedGrid").innerHTML=list.length?list.map(card).join(""):"<p class='muted'>No saved rooms yet.</p>";
-}
-async function saveRoom(id){
- if(!user){openAuth();return}
- const {data}=await supabaseClient.from("favorites").select("id").eq("user_id",user.id).eq("room_id",id).maybeSingle();
- if(data){await supabaseClient.from("favorites").delete().eq("id",data.id)}else{const {error}=await supabaseClient.from("favorites").insert({user_id:user.id,room_id:id});if(error){toast(error.message);return}}
- render();
-}
-function searchRooms(){
- const l=document.getElementById("location").value.toLowerCase().trim(),max=+document.getElementById("maxRent").value||Infinity,t=document.getElementById("type").value,fs=[...document.querySelectorAll(".facility:checked")].map(x=>x.value);
- filtered=rooms.filter(r=>(!l||String(r.area).toLowerCase().includes(l)||String(r.title).toLowerCase().includes(l))&&Number(r.rent)<=max&&(!t||r.type===t)&&fs.every(f=>(r.facilities||[]).includes(f)));
- render();document.getElementById("rooms").scrollIntoView({behavior:"smooth"});
-}
-function clearFilters(){document.getElementById("location").value="";document.getElementById("maxRent").value="";document.getElementById("type").value="";document.querySelectorAll(".facility").forEach(x=>x.checked=false);filtered=[...rooms];render()}
-function callOwner(p){if(p)location.href="tel:"+p}
-function openRoom(id){
- const r=rooms.find(x=>String(x.id)===String(id));if(!r)return;
- modalImg.src=r.image_url;modalTitle.textContent=r.title;modalType.textContent=r.type+(r.verified?" • ✓ Verified":"");modalArea.textContent="📍 "+r.area;modalPrice.innerHTML="₹"+Number(r.rent).toLocaleString("en-IN")+" <small>/month</small>";modalTags.innerHTML=(r.facilities||[]).map(x=>`<span class="tag">${esc(x)}</span>`).join("");modalDesc.textContent=r.description||"";modalDeposit.textContent=r.deposit?"Security deposit: ₹"+Number(r.deposit).toLocaleString("en-IN"):"";
- const p=String(r.phone||"").replace(/\D/g,"");modalWa.href=`https://wa.me/${p}?text=${encodeURIComponent("Hi, I found your room on Roomly: "+r.title+" in "+r.area+". Is it available?")}`;modalCall.onclick=()=>callOwner(p);modalSave.onclick=()=>saveRoom(r.id);modalReport.onclick=()=>reportRoom(r.id);document.getElementById("modal").classList.add("open")
-}
-function closeModal(e){if(!e||e.target.id==="modal")document.getElementById("modal").classList.remove("open")}
-async function reportRoom(id){if(!user){openAuth();return}const reason=prompt("Why are you reporting this listing?","Incorrect or suspicious listing");if(!reason)return;const {error}=await supabaseClient.from("reports").insert({user_id:user.id,room_id:id,reason});toast(error?error.message:"🚩 Report submitted.");}
-function toggleTheme(){document.body.classList.toggle("dark");localStorage.setItem("roomlyTheme",document.body.classList.contains("dark")?"dark":"light");document.querySelector(".theme").textContent=document.body.classList.contains("dark")?"☀️":"🌙"}
-function openAuth(){document.getElementById("authModal").classList.add("open");document.getElementById("authMsg").textContent=""}
-function closeAuth(){document.getElementById("authModal").classList.remove("open")}
-function switchAuth(){authMode=authMode==="login"?"signup":"login";document.getElementById("authTitle").textContent=authMode==="login"?"Login to Roomly":"Create your Roomly account";document.querySelector("#authModal .secondary").textContent=authMode==="login"?"Create account":"Back to login";document.getElementById("authMsg").textContent=""}
-async function submitAuth(){
- if(!supabaseClient){document.getElementById("authMsg").textContent="First connect Supabase in config.js.";return}
- const email=authEmail.value.trim(),password=authPassword.value;if(password.length<6){authMsg.textContent="Password must be at least 6 characters.";return}
- let res=authMode==="login"?await supabaseClient.auth.signInWithPassword({email,password}):await supabaseClient.auth.signUp({email,password});
- if(res.error){authMsg.textContent=res.error.message;return}
- authMsg.style.color="#16823b";authMsg.textContent=authMode==="signup"?"Account created. Check your email if confirmation is enabled.":"Logged in.";setTimeout(closeAuth,900)
-}
-async function updateUserUI(){
- const el=document.getElementById("userStatus");el.textContent=user?`Logged in: ${user.email}`:"Not logged in";
- document.querySelector(".login-mini").textContent=user?"Logout":"Login";
- document.querySelector(".login-mini").onclick=user?logout:openAuth;
-}
-async function logout(){if(supabaseClient)await supabaseClient.auth.signOut()}
-async function updateStats(){
- document.getElementById("statListings").textContent=user?rooms.filter(r=>r.user_id===user.id).length:"0";
- document.getElementById("statSaved").textContent=user?document.querySelectorAll("#savedGrid .card").length:"0";
- document.getElementById("statReports").textContent="—";
-}
-document.getElementById("listingForm").addEventListener("submit",async e=>{
- e.preventDefault();if(!user){openAuth();return}
- if(!supabaseClient){toast("Connect Supabase first.");return}
- const r={user_id:user.id,title:fTitle.value.trim(),area:fArea.value.trim(),rent:+fRent.value,deposit:+fDeposit.value||0,type:fType.value,image_url:fImage.value.trim()||DEMO_ROOMS[0].image_url,phone:fPhone.value.trim(),facilities:fFacilities.value.split(",").map(x=>x.trim()).filter(Boolean),description:fDesc.value.trim(),status:"active",verified:false};
- const {error}=await supabaseClient.from("rooms").insert(r);if(error){toast(error.message);return}e.target.reset();await loadRooms();toast("✅ Listing published online.");document.getElementById("rooms").scrollIntoView({behavior:"smooth"})
-});
-function toast(msg){alert(msg)}
-if(localStorage.getItem("roomlyTheme")==="dark"){document.body.classList.add("dark");document.querySelector(".theme").textContent="☀️"}
-init();
-
+{id:1,title:'Furnished Single Room',area:'Whitefield, Bengaluru',rent:7500,deposit:15000,electricity:700,water:300,wifi_charge:300,type:'Single Room',gender:'Anyone',furnishing:'Furnished',image_url:'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=80',photos:[],video_url:'',phone:'919876543210',facilities:['Wi-Fi','Attached Bathroom','Parking'],nearby:'IT parks, Bus stop, Market',rules:'No smoking',description:'Clean furnished room close to offices and public transport.',verified:true,status:'active'},
+{id:2,title:'Modern PG for Working Professionals',area:'HSR Layout, Bengaluru',rent:9000,deposit:18000,electricity:500,water:250,wifi_charge:0,type:'PG',gender:'Men',furnishing:'Furnished',image_url:'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=80',photos:[],video_url:'',phone:'919876543211',facilities:['Wi-Fi','AC','Food'],nearby:'Metro, restaurants, market',rules:'ID required',description:'Comfortable PG with modern facilities.',verified:true,status:'active'},
+{id:3,title:'Affordable Shared Room',area:'Electronic City, Bengaluru',rent:5000,deposit:10000,electricity:500,water:200,wifi_charge:200,type:'Shared Room',gender:'Anyone',furnishing:'Semi-furnished',image_url:'https://images.unsplash.com/photo-1560185008-b033106af5c3?auto=format&fit=crop&w=900&q=80',photos:[],video_url:'',phone:'919876543212',facilities:['Wi-Fi','Parking'],nearby:'Bus stop, IT parks',rules:'Keep common areas clean',description:'Budget-friendly shared room near IT parks.',verified:false,status:'active'}];
+let supabaseClient=null,user=null,rooms=[],filtered=[],authMode='login',compareIds=[];
+function configured(){return window.ROOMLY_SUPABASE_URL&&!window.ROOMLY_SUPABASE_URL.startsWith('PASTE_')&&window.ROOMLY_SUPABASE_KEY&&!window.ROOMLY_SUPABASE_KEY.startsWith('PASTE_')}
+if(configured()&&window.supabase)supabaseClient=window.supabase.createClient(window.ROOMLY_SUPABASE_URL,window.ROOMLY_SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+const arr=v=>Array.isArray(v)?v:(typeof v==='string'?(v? v.split(',').map(x=>x.trim()).filter(Boolean):[]):[]);
+const money=n=>'₹'+Number(n||0).toLocaleString('en-IN');
+const total=r=>Number(r.rent||0)+Number(r.electricity||0)+Number(r.water||0)+Number(r.wifi_charge||0);
+const localSaved=()=>JSON.parse(localStorage.getItem('roomlySaved')||'[]').map(String);
+async function init(){if(supabaseClient){const s=await supabaseClient.auth.getSession();user=s.data.session?.user||null;supabaseClient.auth.onAuthStateChange((_e,s)=>{user=s?.user||null;updateUserUI();loadRooms()});await loadRooms()}else{rooms=JSON.parse(localStorage.getItem('roomlyRooms')||'null')||DEMO_ROOMS;filtered=[...rooms];render();updateUserUI()}}
+async function loadRooms(){if(!supabaseClient){render();return}const {data,error}=await supabaseClient.from('rooms').select('*').eq('status','active').order('created_at',{ascending:false});if(error){rooms=DEMO_ROOMS;toast('Database setup not finished — showing demo rooms.')}else rooms=data||[];filtered=[...rooms];render()}
+function card(r){const p=String(r.phone||'').replace(/\D/g,''),saved=localSaved().includes(String(r.id)),comp=compareIds.includes(String(r.id));const wa=`https://wa.me/${p}?text=${encodeURIComponent('Hi, I found your room on Roomly: '+r.title+' in '+r.area+'. Is it available?')}`;const fac=arr(r.facilities);return `<article class="card"><img src="${esc(r.image_url)}" alt="${esc(r.title)}" onclick="openRoom('${r.id}')"><div class="card-body"><div class="muted">${esc(r.type)} • ${esc(r.gender||'Anyone')} ${r.verified?'• ✓ Verified':''}</div><h3>${esc(r.title)}</h3><div class="muted">📍 ${esc(r.area)}</div><p class="price">${money(r.rent)} <small>/month</small></p><div class="muted">Total approx: <b>${money(total(r))}/month</b></div><div class="tags">${fac.map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div><p class="muted">${esc(r.description||'')}</p><div class="actions"><a class="wa" target="_blank" href="${wa}">💬 WhatsApp</a><button class="save" onclick="saveRoom('${r.id}')">${saved?'♥ Saved':'♡ Save'}</button><button class="compare-btn" onclick="toggleCompare('${r.id}')">${comp?'✓ Compared':'⚖️ Compare'}</button></div></div></article>`}
+function render(){const s=document.getElementById('sort').value,list=[...filtered].sort((a,b)=>s==='low'?a.rent-b.rent:s==='high'?b.rent-a.rent:0);document.getElementById('roomGrid').innerHTML=list.length?list.map(card).join(''):'<p class="muted">No matching rooms found.</p>';document.getElementById('resultText').textContent=`${list.length} room${list.length!==1?'s':''} found`;renderSaved();renderCompare();updateStats();renderMyListings()}
+async function renderSaved(){if(!user){document.getElementById('savedGrid').innerHTML='<p class="muted">Login to sync your saved rooms.</p>';return}const {data,error}=await supabaseClient.from('favorites').select('room_id').eq('user_id',user.id);if(error){document.getElementById('savedGrid').innerHTML='<p class="muted">Could not load saved rooms.</p>';return}const ids=(data||[]).map(x=>String(x.room_id));document.getElementById('savedGrid').innerHTML=rooms.filter(r=>ids.includes(String(r.id))).map(card).join('')||'<p class="muted">No saved rooms yet.</p>'}
+async function saveRoom(id){if(!user){openAuth();return}const {data}=await supabaseClient.from('favorites').select('id').eq('user_id',user.id).eq('room_id',id).maybeSingle();if(data)await supabaseClient.from('favorites').delete().eq('id',data.id);else{const {error}=await supabaseClient.from('favorites').insert({user_id:user.id,room_id:id});if(error){toast(error.message);return}}render()}
+function searchRooms(){const l=location.value.toLowerCase().trim(),max=+maxRent.value||Infinity,t=type.value,g=gender.value,furn=furnishing.value,fs=[...document.querySelectorAll('.facility:checked')].map(x=>x.value);filtered=rooms.filter(r=>(!l||String(r.area).toLowerCase().includes(l)||String(r.title).toLowerCase().includes(l))&&Number(r.rent)<=max&&(!t||r.type===t)&&(!g||r.gender===g||r.gender==='Anyone')&&(!furn||r.furnishing===furn)&&fs.every(f=>arr(r.facilities).includes(f)));render();document.getElementById('rooms').scrollIntoView({behavior:'smooth'})}
+function clearFilters(){location.value='';maxRent.value='';type.value='';gender.value='';furnishing.value='';document.querySelectorAll('.facility').forEach(x=>x.checked=false);filtered=[...rooms];render()}
+function callOwner(p){if(p)location.href='tel:'+p}
+function openRoom(id){const r=rooms.find(x=>String(x.id)===String(id));if(!r)return;const photos=[r.image_url,...arr(r.photos)].filter(Boolean);document.getElementById('modalGallery').innerHTML=photos.map(x=>`<img src="${esc(x)}" alt="Room photo">`).join('')+(r.video_url?`<iframe src="${esc(r.video_url)}" title="Room video" allowfullscreen></iframe>`:'');modalType.textContent=`${r.type} • ${r.gender||'Anyone'} • ${r.furnishing||'Not specified'}${r.verified?' • ✓ Verified':''}`;modalTitle.textContent=r.title;modalArea.textContent='📍 '+r.area;modalPrice.innerHTML=`${money(r.rent)} <small>/month</small>`;modalTotal.textContent=`Estimated monthly total: ${money(total(r))} (rent + electricity + water + Wi-Fi)`;modalTags.innerHTML=arr(r.facilities).map(x=>`<span class="tag">${esc(x)}</span>`).join('');modalDesc.textContent=r.description||'';modalDeposit.textContent=`Security deposit: ${money(r.deposit)}`;modalNearby.textContent=r.nearby?'🏪 Nearby: '+r.nearby:'';modalRules.textContent=r.rules?'📜 Rules: '+r.rules:'';const p=String(r.phone||'').replace(/\D/g,'');modalWa.href=`https://wa.me/${p}?text=${encodeURIComponent('Hi, I found your room on Roomly: '+r.title+' in '+r.area+'. Is it available?')}`;modalCall.onclick=()=>callOwner(p);modalMap.href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(r.area);modalSave.onclick=()=>saveRoom(r.id);modalCompare.onclick=()=>toggleCompare(r.id);modalBook.onclick=()=>requestBooking(r.id);modalReport.onclick=()=>reportRoom(r.id);loadReviews(r.id);document.getElementById('modal').classList.add('open')}
+function closeModal(e){if(!e||e.target.id==='modal')document.getElementById('modal').classList.remove('open')}
+function toggleCompare(id){id=String(id);if(compareIds.includes(id))compareIds=compareIds.filter(x=>x!==id);else if(compareIds.length>=3){toast('You can compare up to 3 rooms.');return}else compareIds.push(id);render();document.getElementById('compare').scrollIntoView({behavior:'smooth'})}
+function clearCompare(){compareIds=[];render()}
+function renderCompare(){const list=compareIds.map(id=>rooms.find(r=>String(r.id)===id)).filter(Boolean);if(!list.length){compareGrid.innerHTML='<p class="muted">No rooms selected. Tap Compare on a room.</p>';return}const rows=[['Rent',...list.map(r=>money(r.rent))],['Deposit',...list.map(r=>money(r.deposit))],['Monthly total',...list.map(r=>money(total(r)))],['Type',...list.map(r=>r.type)],['For',...list.map(r=>r.gender||'Anyone')],['Furnishing',...list.map(r=>r.furnishing||'—')],['Facilities',...list.map(r=>arr(r.facilities).join(', '))],['Nearby',...list.map(r=>r.nearby||'—')]];compareGrid.innerHTML='<table><thead><tr><th>Feature</th>'+list.map(r=>`<th>${esc(r.title)}</th>`).join('')+'</tr></thead><tbody>'+rows.map(row=>`<tr><th>${esc(row[0])}</th>${row.slice(1).map(v=>`<td>${esc(v)}</td>`).join('')}</tr>`).join('')+'</tbody></table>'}
+async function requestBooking(id){if(!user){openAuth();return}const date=prompt('Preferred move-in date (YYYY-MM-DD):');if(!date)return;const note=prompt('Message to owner (optional):','I would like to visit this room.');const {error}=await supabaseClient.from('booking_requests').insert({user_id:user.id,room_id:id,preferred_date:date,message:note||''});toast(error?error.message:'✅ Booking request sent to the owner.');if(!error)updateStats()}
+async function loadReviews(id){const box=document.getElementById('reviewArea');if(!supabaseClient){box.innerHTML='<h3>⭐ Reviews</h3><p class="muted">Reviews appear after Supabase setup.</p>';return}const {data}=await supabaseClient.from('reviews').select('*').eq('room_id',id).order('created_at',{ascending:false}).limit(10);box.innerHTML='<h3>⭐ Reviews</h3>'+(data||[]).map(x=>`<div class="review"><b>${Number(x.rating)}/5</b> — ${esc(x.comment||'')}</div>`).join('')+(user?`<div class="row"><select id="reviewRating"><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select><input id="reviewComment" placeholder="Write a review"><button onclick="submitReview('${id}')">Post Review</button></div>`:'<p class="muted">Login to review.</p>')}
+async function submitReview(id){const rating=+reviewRating.value,comment=reviewComment.value.trim();if(!comment){toast('Write a short review.');return}const {error}=await supabaseClient.from('reviews').upsert({user_id:user.id,room_id:id,rating,comment},{onConflict:'user_id,room_id'});toast(error?error.message:'⭐ Review posted.');if(!error)loadReviews(id)}
+async function reportRoom(id){if(!user){openAuth();return}const reason=prompt('Why are you reporting this listing?','Incorrect or suspicious listing');if(!reason)return;const {error}=await supabaseClient.from('reports').insert({user_id:user.id,room_id:id,reason});toast(error?'Error: '+error.message:'🚩 Report submitted.')}
+function editRoom(id){const r=rooms.find(x=>String(x.id)===String(id));if(!r)return;editId.value=r.id;fTitle.value=r.title;fArea.value=r.area;fRent.value=r.rent;fDeposit.value=r.deposit||0;fElectricity.value=r.electricity||0;fWater.value=r.water||0;fWifiCharge.value=r.wifi_charge||0;fAvailable.value=r.available_from||'';fType.value=r.type;fGender.value=r.gender||'Anyone';fFurnishing.value=r.furnishing||'Furnished';fPhone.value=r.phone;fImage.value=r.image_url||'';fPhotos.value=arr(r.photos).join(', ');fVideo.value=r.video_url||'';fFacilities.value=arr(r.facilities).join(', ');fNearby.value=r.nearby||'';fRules.value=r.rules||'';fDesc.value=r.description||'';listingSubmit.textContent='Update Listing';cancelEdit.style.display='inline-block';document.getElementById('owner').scrollIntoView({behavior:'smooth'})}
+async function deleteRoom(id){if(!user||!confirm('Delete this listing?'))return;const {error}=await supabaseClient.from('rooms').delete().eq('id',id).eq('user_id',user.id);if(error)toast(error.message);else{toast('Listing deleted.');loadRooms()}}
+function resetListingForm(){listingForm.reset();editId.value='';listingSubmit.textContent='Publish Online Listing';cancelEdit.style.display='none'}
+async function renderMyListings(){const box=document.getElementById('myListings');if(!user){box.innerHTML='';return}const mine=rooms.filter(r=>r.user_id===user.id);box.innerHTML=mine.length?mine.map(r=>`<article class="card"><img src="${esc(r.image_url)}"><div class="card-body"><h3>${esc(r.title)}</h3><p class="muted">${esc(r.area)} • ${money(r.rent)}/month</p><div class="actions"><button onclick="editRoom('${r.id}')">✏️ Edit</button><button class="report" onclick="deleteRoom('${r.id}')">🗑️ Delete</button></div></div></article>`).join(''):'<p class="muted">You have no listings yet.</p>'}
+function toggleTheme(){document.body.classList.toggle('dark');localStorage.setItem('roomlyTheme',document.body.classList.contains('dark')?'dark':'light');document.querySelector('.theme').textContent=document.body.classList.contains('dark')?'☀️':'🌙'}
+function openAuth(){authModal.classList.add('open');authMsg.textContent=''}function closeAuth(){authModal.classList.remove('open')}function switchAuth(){authMode=authMode==='login'?'signup':'login';authTitle.textContent=authMode==='login'?'Login to Roomly':'Create your Roomly account';document.querySelector('#authModal .secondary').textContent=authMode==='login'?'Create account':'Back to login';authMsg.textContent=''}
+async function submitAuth(){if(!supabaseClient){authMsg.textContent='First connect Supabase in config.js.';return}const email=authEmail.value.trim(),password=authPassword.value;if(password.length<6){authMsg.textContent='Password must be at least 6 characters.';return}const res=authMode==='login'?await supabaseClient.auth.signInWithPassword({email,password}):await supabaseClient.auth.signUp({email,password});if(res.error){authMsg.textContent=res.error.message;return}authMsg.style.color='#16823b';authMsg.textContent=authMode==='signup'?'Account created. Check email if confirmation is enabled.':'Logged in.';setTimeout(closeAuth,900)}
+async function updateUserUI(){userStatus.textContent=user?`Logged in: ${user.email}`:'Not logged in';document.querySelector('.login-mini').textContent=user?'Logout':'Login';document.querySelector('.login-mini').onclick=user?logout:openAuth}
+async function updateStats(){if(!user){statListings.textContent='0';statSaved.textContent='0';statBookings.textContent='0';statReports.textContent='0';return}statListings.textContent=rooms.filter(r=>r.user_id===user.id).length;const f=await supabaseClient.from('favorites').select('id',{count:'exact',head:true}).eq('user_id',user.id);const b=await supabaseClient.from('booking_requests').select('id',{count:'exact',head:true}).or(`user_id.eq.${user.id}`);const rp=await supabaseClient.from('reports').select('id',{count:'exact',head:true}).eq('user_id',user.id);statSaved.textContent=f.count||0;statBookings.textContent=b.count||0;statReports.textContent=rp.count||0}
+listingForm.addEventListener('submit',async e=>{e.preventDefault();if(!user){openAuth();return}if(!supabaseClient){toast('Connect Supabase first.');return}const data={user_id:user.id,title:fTitle.value.trim(),area:fArea.value.trim(),rent:+fRent.value,deposit:+fDeposit.value||0,electricity:+fElectricity.value||0,water:+fWater.value||0,wifi_charge:+fWifiCharge.value||0,available_from:fAvailable.value||null,type:fType.value,gender:fGender.value,furnishing:fFurnishing.value,image_url:fImage.value.trim()||DEMO_ROOMS[0].image_url,photos:fPhotos.value.split(',').map(x=>x.trim()).filter(Boolean),video_url:fVideo.value.trim(),phone:fPhone.value.trim(),facilities:fFacilities.value.split(',').map(x=>x.trim()).filter(Boolean),nearby:fNearby.value.trim(),rules:fRules.value.trim(),description:fDesc.value.trim(),status:'active'};let res;if(editId.value)res=await supabaseClient.from('rooms').update(data).eq('id',editId.value).eq('user_id',user.id);else res=await supabaseClient.from('rooms').insert(data);if(res.error){toast(res.error.message);return}resetListingForm();await loadRooms();toast(editId.value?'✅ Listing updated.':'✅ Listing published online.');rooms&&document.getElementById('rooms').scrollIntoView({behavior:'smooth'})});
+async function logout(){if(supabaseClient)await supabaseClient.auth.signOut()}function toast(msg){alert(msg)}if(localStorage.getItem('roomlyTheme')==='dark'){document.body.classList.add('dark');document.querySelector('.theme').textContent='☀️'}init();
