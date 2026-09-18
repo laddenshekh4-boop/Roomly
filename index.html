@@ -1,83 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="Roomly — find rooms, PGs and flats.">
-<title>Roomly V4 — Find Your Room</title>
-<link rel="stylesheet" href="style.css">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js"></script>
-</head>
-<body>
-<header>
-  <div class="logo">🏠 Roomly <small>V4</small></div>
-  <nav>
-    <a href="#rooms">Explore</a><a href="#saved">❤️ Saved</a><a href="#dashboard">Dashboard</a><a href="#owner">List a Room</a>
-  </nav>
-  <div class="head-actions"><button class="theme" onclick="toggleTheme()">🌙</button><button class="login-mini" onclick="openAuth()">Login</button></div>
-</header>
-
-<section class="hero">
-<div class="hero-copy">
-  <span class="pill">REAL ROOM SEARCH • OWNER LISTINGS</span>
-  <h1>Find a room you'll<br><span>love to live in.</span></h1>
-  <p>Search rooms, PGs and flats. Save favourites and contact owners directly.</p>
-  <div class="trust">✓ User accounts &nbsp; ✓ Online listings &nbsp; ✓ Favourites &nbsp; ✓ Reports</div>
-</div>
-<div class="search-box">
-  <h2>Find your next place</h2>
-  <label>Location / Area</label><input id="location" placeholder="e.g. Whitefield, Bengaluru">
-  <div class="row">
-    <div><label>Max Rent ₹</label><input id="maxRent" type="number" min="0" placeholder="10000"></div>
-    <div><label>Room Type</label><select id="type"><option value="">Any</option><option>Single Room</option><option>Shared Room</option><option>PG</option><option>1BHK</option><option>2BHK</option></select></div>
-  </div>
-  <div class="checks">
-    <label><input class="facility" value="Wi-Fi" type="checkbox"> Wi-Fi</label>
-    <label><input class="facility" value="AC" type="checkbox"> AC</label>
-    <label><input class="facility" value="Attached Bathroom" type="checkbox"> Attached Bath</label>
-    <label><input class="facility" value="Parking" type="checkbox"> Parking</label>
-    <label><input class="facility" value="Food" type="checkbox"> Food</label>
-  </div>
-  <button onclick="searchRooms()">🔍 Find Rooms</button><button class="secondary" onclick="clearFilters()">Reset</button>
-</div>
-</section>
-
-<main id="rooms">
-<div class="section-head"><div><h2>Available Rooms</h2><p id="resultText">Loading listings...</p></div>
-<select id="sort" onchange="render()"><option value="recommended">Recommended</option><option value="low">Rent: Low to High</option><option value="high">Rent: High to Low</option></select></div>
-<div id="roomGrid" class="grid"></div>
-</main>
-
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Roomly — find rooms, PGs and flats."><title>Roomly V5 — Find Your Room</title><link rel="stylesheet" href="style.css"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script></head><body><header><div class="logo">🏠 Roomly <small>V5</small></div><nav><a href="#rooms">Explore</a><a href="#saved">❤️ Saved</a><a href="#compare">⚖️ Compare</a><a href="#dashboard">Dashboard</a><a href="#owner">List a Room</a></nav><div class="head-actions"><button class="theme" onclick="toggleTheme()">🌙</button><button class="login-mini" onclick="openAuth()">Login</button></div></header>
+<section class="hero"><div class="hero-copy"><span class="pill">REAL ROOM SEARCH • OWNER LISTINGS</span><h1>Find a room you'll<br><span>love to live in.</span></h1><p>Search rooms, PGs and flats with real costs, facilities and owner contact.</p><div class="trust">✓ Verified details &nbsp; ✓ Compare &nbsp; ✓ Save &nbsp; ✓ Booking requests</div></div><div class="search-box"><h2>Find your next place</h2><label>Location / Area</label><input id="location" placeholder="e.g. Whitefield, Bengaluru"><div class="row"><div><label>Max Rent ₹</label><input id="maxRent" type="number" min="0" placeholder="10000"></div><div><label>Room Type</label><select id="type"><option value="">Any</option><option>Single Room</option><option>Shared Room</option><option>PG</option><option>1BHK</option><option>2BHK</option></select></div></div><div class="row"><div><label>For</label><select id="gender"><option value="">Anyone</option><option>Men</option><option>Women</option><option>Family</option></select></div><div><label>Furnishing</label><select id="furnishing"><option value="">Any</option><option>Furnished</option><option>Semi-furnished</option><option>Unfurnished</option></select></div></div><div class="checks"><label><input class="facility" value="Wi-Fi" type="checkbox"> Wi-Fi</label><label><input class="facility" value="AC" type="checkbox"> AC</label><label><input class="facility" value="Attached Bathroom" type="checkbox"> Attached Bath</label><label><input class="facility" value="Parking" type="checkbox"> Parking</label><label><input class="facility" value="Food" type="checkbox"> Food</label></div><button onclick="searchRooms()">🔍 Find Rooms</button><button class="secondary" onclick="clearFilters()">Reset</button></div></section>
+<main id="rooms"><div class="section-head"><div><h2>Available Rooms</h2><p id="resultText">Loading listings...</p></div><select id="sort" onchange="render()"><option value="recommended">Recommended</option><option value="low">Rent: Low to High</option><option value="high">Rent: High to Low</option></select></div><div id="roomGrid" class="grid"></div></main>
 <section id="saved" class="saved"><h2>❤️ My Saved Rooms</h2><p>Saved rooms for your account.</p><div id="savedGrid" class="grid"></div></section>
-
-<section id="dashboard" class="dashboard">
-<h2>📊 My Dashboard</h2><div class="userbar"><span id="userStatus">Not logged in</span><button onclick="openAuth()">Login / Sign up</button></div>
-<div class="stats"><div><strong id="statListings">0</strong><span>My Listings</span></div><div><strong id="statSaved">0</strong><span>Saved Rooms</span></div><div><strong id="statReports">0</strong><span>Reports</span></div></div>
-</section>
-
-<section id="owner" class="owner"><h2>🏠 List your room</h2><p>Login is required to publish an online listing.</p>
-<form id="listingForm">
-<div class="row"><input required id="fTitle" placeholder="Listing title"><input required id="fArea" placeholder="Area, City"></div>
-<div class="row"><input required id="fRent" type="number" min="0" placeholder="Monthly rent ₹"><input id="fDeposit" type="number" min="0" placeholder="Security deposit ₹"></div>
-<div class="row"><select id="fType"><option>Single Room</option><option>Shared Room</option><option>PG</option><option>1BHK</option><option>2BHK</option></select><input id="fImage" placeholder="Photo URL (optional)"></div>
-<input required id="fPhone" placeholder="WhatsApp number e.g. 919876543210">
-<input id="fFacilities" placeholder="Facilities: Wi-Fi, AC, Parking, Food">
-<textarea id="fDesc" placeholder="Short description"></textarea>
-<button>Publish Online Listing</button></form></section>
-
-<div id="modal" class="modal" onclick="closeModal(event)"><div class="modal-card" onclick="event.stopPropagation()">
-<button class="close" onclick="closeModal()">×</button><img id="modalImg"><div class="modal-body">
-<div id="modalType" class="muted"></div><h2 id="modalTitle"></h2><p id="modalArea" class="muted"></p><div id="modalPrice" class="price"></div><div id="modalTags" class="tags"></div><p id="modalDesc"></p><p id="modalDeposit" class="muted"></p>
-<div class="modal-actions"><a id="modalWa" class="wa" target="_blank">💬 WhatsApp</a><a id="modalCall" class="call">📞 Call</a><button id="modalSave" class="save">♡ Save</button><button id="modalReport" class="report">🚩 Report</button></div>
-</div></div></div>
-
-<div id="authModal" class="modal"><div class="auth-card"><button class="close" onclick="closeAuth()">×</button>
-<h2 id="authTitle">Login to Roomly</h2><p id="authHint" class="muted">Use email and password.</p>
-<input id="authEmail" type="email" placeholder="Email"><input id="authPassword" type="password" placeholder="Password">
-<button onclick="submitAuth()">Continue</button><button class="secondary" onclick="switchAuth()">Create account</button><p id="authMsg" class="auth-msg"></p></div></div>
-
-<footer>© 2026 Roomly V4 • Find a better place to live</footer>
-<script src="script.js"></script>
-</body>
-</html>
+<section id="compare" class="compare"><div class="section-head"><div><h2>⚖️ Compare Rooms</h2><p>Select up to 3 rooms and compare costs and facilities.</p></div><button class="secondary" onclick="clearCompare()">Clear</button></div><div id="compareGrid" class="compare-table"></div></section>
+<section id="dashboard" class="dashboard"><h2>📊 My Dashboard</h2><div class="userbar"><span id="userStatus">Not logged in</span><button onclick="openAuth()">Login / Sign up</button></div><div class="stats"><div><strong id="statListings">0</strong><span>My Listings</span></div><div><strong id="statSaved">0</strong><span>Saved Rooms</span></div><div><strong id="statBookings">0</strong><span>Booking Requests</span></div><div><strong id="statReports">0</strong><span>Reports</span></div></div><div id="myListings" class="grid dashboard-list"></div></section>
+<section id="owner" class="owner"><h2>🏠 List your room</h2><p>Login is required to publish an online listing.</p><form id="listingForm"><input type="hidden" id="editId"><div class="row"><input required id="fTitle" placeholder="Listing title"><input required id="fArea" placeholder="Area, City"></div><div class="row"><input required id="fRent" type="number" min="0" placeholder="Monthly rent ₹"><input id="fDeposit" type="number" min="0" placeholder="Security deposit ₹"></div><div class="row"><input id="fElectricity" type="number" min="0" placeholder="Electricity ₹/month"><input id="fWater" type="number" min="0" placeholder="Water ₹/month"></div><div class="row"><input id="fWifiCharge" type="number" min="0" placeholder="Wi-Fi ₹/month"><input id="fAvailable" type="date"></div><div class="row"><select id="fType"><option>Single Room</option><option>Shared Room</option><option>PG</option><option>1BHK</option><option>2BHK</option></select><select id="fGender"><option>Anyone</option><option>Men</option><option>Women</option><option>Family</option></select></div><div class="row"><select id="fFurnishing"><option>Furnished</option><option>Semi-furnished</option><option>Unfurnished</option></select><input id="fPhone" required placeholder="WhatsApp number e.g. 919876543210"></div><div class="row"><input id="fImage" placeholder="Main photo URL"><input id="fPhotos" placeholder="More photo URLs, separated by comma"></div><input id="fVideo" placeholder="Room video URL (optional)"><input id="fFacilities" placeholder="Facilities: Wi-Fi, AC, Parking, Food, Attached Bathroom"><input id="fNearby" placeholder="Nearby: Metro, Bus stop, Market, Hospital"><textarea id="fRules" placeholder="Owner rules"></textarea><textarea id="fDesc" placeholder="Short description"></textarea><button id="listingSubmit">Publish Online Listing</button><button type="button" class="secondary" id="cancelEdit" onclick="resetListingForm()" style="display:none">Cancel Edit</button></form></section>
+<div id="modal" class="modal" onclick="closeModal(event)"><div class="modal-card" onclick="event.stopPropagation()"><button class="close" onclick="closeModal()">×</button><div id="modalGallery" class="gallery"></div><div class="modal-body"><div id="modalType" class="muted"></div><h2 id="modalTitle"></h2><p id="modalArea" class="muted"></p><div id="modalPrice" class="price"></div><div id="modalTotal" class="total-cost"></div><div id="modalTags" class="tags"></div><p id="modalDesc"></p><p id="modalDeposit" class="muted"></p><p id="modalNearby" class="muted"></p><p id="modalRules" class="muted"></p><div class="modal-actions"><a id="modalMap" class="call" target="_blank">📍 Map</a><a id="modalWa" class="wa" target="_blank">💬 WhatsApp</a><a id="modalCall" class="call">📞 Call</a><button id="modalSave" class="save">♡ Save</button><button id="modalCompare" class="compare-btn">⚖️ Compare</button><button id="modalBook">📅 Request Booking</button><button id="modalReport" class="report">🚩 Report</button></div><div id="reviewArea"></div></div></div></div>
+<div id="authModal" class="modal"><div class="auth-card"><button class="close" onclick="closeAuth()">×</button><h2 id="authTitle">Login to Roomly</h2><p id="authHint" class="muted">Use email and password.</p><input id="authEmail" type="email" placeholder="Email"><input id="authPassword" type="password" placeholder="Password"><button onclick="submitAuth()">Continue</button><button class="secondary" onclick="switchAuth()">Create account</button><p id="authMsg" class="auth-msg"></p></div></div><footer>© 2026 Roomly V5 • Find a better place to live</footer><script src="script.js"></script></body></html>
