@@ -1,1335 +1,287 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<meta name="description"
-content="Alfrzo — Find rooms, PGs, flats and affordable stays across India.">
-
-<title>Alfrzo — Find Your Perfect Room</title>
-
-<link rel="stylesheet" href="style.css">
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alfrzo — Find a place you'll love to live in.</title>
+  <meta name="description" content="Find verified rooms, PGs and shared homes across India with Alfrzo.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
+  <div id="toast" class="toast"></div>
 
-<!-- ================= HEADER ================= -->
-
-<header class="site-header">
-
-  <div class="brand">
-    <div class="brand-icon">A</div>
-    <div>
-      <strong>Alfrzo</strong>
-      <small>Find your place</small>
+  <header class="topbar">
+    <a class="brand" href="#" onclick="showSection('home');return false;">
+      <span class="brand-mark">A</span><span>alfrzo</span>
+    </a>
+    <nav class="desktop-nav">
+      <a href="#" onclick="showSection('home');return false;">Explore</a>
+      <a href="#" onclick="showSection('saved');return false;">Wishlist <span id="navSavedCount" class="nav-count">0</span></a>
+      <a href="#" onclick="showSection('support');return false;">Support</a>
+    </nav>
+    <div class="top-actions">
+      <button class="icon-btn" aria-label="Toggle theme" onclick="toggleTheme()">☼</button>
+      <button class="profile-pill" onclick="showSection('profile')"><span class="avatar">◯</span><span class="profile-label">Profile</span></button>
+      <button class="hamburger" onclick="openMenu()" aria-label="Open menu">☰</button>
     </div>
+  </header>
+
+  <main id="app">
+    <!-- HOME / EXPLORE -->
+    <section id="home" class="page active">
+      <section class="hero">
+        <div class="hero-inner">
+          <div class="hero-copy">
+            <span class="eyebrow">🏠 Rooms made simple</span>
+            <h1>Find a place you'll <em>love</em> to live in.</h1>
+            <p>Discover rooms, PGs and shared homes in India's most popular cities.</p>
+          </div>
+
+          <div class="search-panel">
+            <div class="search-field location-field">
+              <span class="field-icon">⌖</span>
+              <div>
+                <label>Where do you want to live?</label>
+                <select id="stateSelect" onchange="populateCities();">
+                  <option value="">Select State</option>
+                  <option>Karnataka</option><option>Maharashtra</option><option>Delhi</option>
+                  <option>Telangana</option><option>Tamil Nadu</option><option>West Bengal</option>
+                  <option>Uttar Pradesh</option><option>Gujarat</option><option>Rajasthan</option>
+                  <option>Kerala</option>
+                </select>
+              </div>
+            </div>
+            <div class="search-field">
+              <span class="field-icon">⌖</span>
+              <div>
+                <label>City</label>
+                <select id="citySelect">
+                  <option value="">Select City</option>
+                </select>
+              </div>
+            </div>
+            <button class="search-btn" onclick="searchRooms()">Search <span>→</span></button>
+          </div>
+          <div class="trust-row"><span>✓ Verified listings</span><span>•</span><span>✓ Direct owner contact</span><span>•</span><span>✓ No booking payment required</span></div>
+        </div>
+      </section>
+
+      <section class="content-section continue-section" id="continueSection">
+        <div class="section-head"><div><h2>Continue your search</h2><p>Pick up where you left off.</p></div></div>
+        <div class="history-chip" onclick="searchByCity('Bengaluru')">↶ <strong>Bengaluru</strong><span>›</span></div>
+      </section>
+
+      <section class="content-section">
+        <div class="section-head">
+          <div><h2>Popular cities in India</h2><p>Find your next home in a city you love.</p></div>
+          <button class="text-btn" onclick="document.getElementById('roomsSection').scrollIntoView({behavior:'smooth'})">View all ›</button>
+        </div>
+        <div class="city-strip" id="popularCities"></div>
+      </section>
+
+      <section class="content-section alt-section">
+        <div class="section-head"><div><h2>Explore by state</h2><p>Browse rooms across India.</p></div></div>
+        <div class="state-grid" id="stateCards"></div>
+      </section>
+
+      <section class="content-section">
+        <div class="section-head">
+          <div><h2>Featured & verified rooms</h2><p>Homes with useful details, photos and direct contact.</p></div>
+          <button class="text-btn" onclick="document.getElementById('roomsSection').scrollIntoView({behavior:'smooth'})">See all ›</button>
+        </div>
+
+        <div class="filter-bar">
+          <button class="filter-chip active" data-filter="all" onclick="quickFilter('all',this)">All</button>
+          <button class="filter-chip" data-filter="verified" onclick="quickFilter('verified',this)">✓ Verified</button>
+          <button class="filter-chip" data-filter="boys" onclick="quickFilter('boys',this)">Boys</button>
+          <button class="filter-chip" data-filter="girls" onclick="quickFilter('girls',this)">Girls</button>
+          <button class="filter-chip" data-filter="family" onclick="quickFilter('family',this)">Family</button>
+          <select id="rentFilter" onchange="applyLocalFilters()"><option value="">Any rent</option><option value="8000">Under ₹8,000</option><option value="12000">Under ₹12,000</option><option value="18000">Under ₹18,000</option></select>
+          <select id="typeFilter" onchange="applyLocalFilters()"><option value="">Any room type</option><option>Private Room</option><option>Shared Room</option><option>1 BHK</option><option>2 BHK</option><option>PG</option></select>
+        </div>
+
+        <div id="roomsSection" class="room-grid"></div>
+        <div id="emptyState" class="empty-state hidden"><div>⌂</div><h3>No rooms found</h3><p>Try another city or relax your filters.</p><button class="primary-btn" onclick="resetFilters()">Show all rooms</button></div>
+      </section>
+
+      <section class="steps-section">
+        <div class="content-section">
+          <div class="section-head"><div><h2>Book your place in 3 easy steps</h2><p>Simple from search to move-in.</p></div></div>
+          <div class="steps-grid">
+            <div class="step"><span>01</span><div><h3>Discover</h3><p>Search by state, city, rent and room preference.</p></div></div>
+            <div class="step"><span>02</span><div><h3>Compare</h3><p>Save your favourites, compare rooms and contact owners.</p></div></div>
+            <div class="step"><span>03</span><div><h3>Request to book</h3><p>Send a booking request and coordinate directly with the owner.</p></div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="stats-section">
+        <div><strong>10K+</strong><span>Rooms listed</span></div>
+        <div><strong>25+</strong><span>Indian cities</span></div>
+        <div><strong>15+</strong><span>States</span></div>
+        <div><strong>4.8/5</strong><span>User rating</span></div>
+      </section>
+    </section>
+
+    <!-- ROOMS -->
+    <section id="rooms" class="page">
+      <div class="page-heading">
+        <button class="back-btn" onclick="showSection('home')">←</button>
+        <div><span class="eyebrow">Explore</span><h2 id="roomsTitle">Rooms in India</h2><p id="resultText">Choose a city to begin.</p></div>
+      </div>
+      <div class="results-toolbar">
+        <div class="filter-bar compact">
+          <select id="resultRent" onchange="applyLocalFilters()"><option value="">Rent</option><option value="8000">≤ ₹8k</option><option value="12000">≤ ₹12k</option><option value="18000">≤ ₹18k</option></select>
+          <select id="resultType" onchange="applyLocalFilters()"><option value="">Room type</option><option>Private Room</option><option>Shared Room</option><option>1 BHK</option><option>2 BHK</option><option>PG</option></select>
+          <select id="resultGender" onchange="applyLocalFilters()"><option value="">For everyone</option><option value="Men">Boys</option><option value="Women">Girls</option><option value="Family">Family</option><option value="Anyone">Anyone</option></select>
+        </div>
+        <select id="sort" onchange="sortRooms()"><option value="recommended">Recommended</option><option value="low">Rent: Low to High</option><option value="high">Rent: High to Low</option></select>
+      </div>
+      <div id="roomResults" class="room-grid"></div>
+    </section>
+
+    <!-- SAVED -->
+    <section id="saved" class="page">
+      <div class="page-heading"><div><span class="eyebrow">Your shortlist</span><h2>Wishlist</h2><p>Rooms you want to remember.</p></div></div>
+      <div id="savedGrid" class="room-grid"></div>
+      <div id="savedEmpty" class="empty-state"><div>♡</div><h3>Your wishlist is empty</h3><p>Tap the heart on any room to save it here.</p><button class="primary-btn" onclick="showSection('home')">Explore rooms</button></div>
+    </section>
+
+    <!-- BOOKINGS -->
+    <section id="bookings" class="page">
+      <div class="page-heading"><div><span class="eyebrow">Your journey</span><h2>Bookings</h2><p>Track your booking requests in one place.</p></div></div>
+      <div class="booking-tabs"><button class="active">All</button><button>Pending</button><button>Confirmed</button><button>Completed</button></div>
+      <div id="bookingList" class="booking-list"></div>
+      <div id="bookingEmpty" class="empty-state"><div>▣</div><h3>No bookings yet</h3><p>When you request a room, your booking status will appear here.</p><button class="primary-btn" onclick="showSection('home')">Find a room</button></div>
+    </section>
+
+    <!-- PROFILE -->
+    <section id="profile" class="page">
+      <div class="page-heading"><div><span class="eyebrow">Alfrzo account</span><h2>Profile</h2></div></div>
+      <div class="profile-card">
+        <div class="big-avatar">◯</div>
+        <div><h3 id="profileName">Guest</h3><p id="profileHint">Kindly <button class="inline-link" onclick="openAuth()">login</button> to see full details.</p></div>
+      </div>
+      <div class="profile-menu">
+        <button onclick="showSection('bookings')"><span>▣</span><strong>Bookings</strong><i>›</i></button>
+        <button onclick="showSection('saved')"><span>♡</span><strong>Wishlist</strong><i>›</i></button>
+        <button onclick="showSection('offers')"><span>◇</span><strong>Offers</strong><b>3</b><i>›</i></button>
+        <button onclick="showSection('refer')"><span>♧</span><strong>Refer & Earn</strong><i>›</i></button>
+        <button onclick="openOwnerForm()"><span>＋</span><strong>List your room</strong><i>›</i></button>
+      </div>
+    </section>
+
+    <!-- SUPPORT -->
+    <section id="support" class="page">
+      <div class="page-heading"><div><span class="eyebrow">We're here to help</span><h2>Support</h2><p>Need help finding or listing a room?</p></div></div>
+      <div class="support-grid">
+        <div class="support-card"><span>💬</span><h3>Chat with us</h3><p>Ask about search, bookings or listings.</p><button class="secondary-btn" onclick="toast('Support chat coming soon')">Start chat</button></div>
+        <div class="support-card"><span>☎</span><h3>Call support</h3><p>Get help with your Alfrzo account.</p><button class="secondary-btn" onclick="window.location.href='tel:+919999999999'">Call us</button></div>
+        <div class="support-card"><span>?</span><h3>FAQs</h3><p>Answers to common questions.</p><button class="secondary-btn" onclick="toast('FAQ section coming soon')">View FAQs</button></div>
+      </div>
+    </section>
+
+    <section id="offers" class="page"><div class="page-heading"><div><span class="eyebrow">For you</span><h2>Offers</h2><p>Promotions and partner benefits can appear here.</p></div></div><div class="offer-card"><span>🎁</span><div><h3>Welcome to Alfrzo</h3><p>Keep an eye on this space for room, moving and partner offers.</p></div></div></section>
+    <section id="refer" class="page"><div class="page-heading"><div><span class="eyebrow">Share Alfrzo</span><h2>Refer & Earn</h2><p>Invite friends and track your referral rewards.</p></div></div><div class="refer-card"><div class="refer-art">↗</div><h3>Give a friend a better room search</h3><p>Share your referral link with friends.</p><button class="primary-btn" onclick="copyReferral()">Copy referral link</button></div></section>
+
+    <!-- OWNER -->
+    <section id="owner" class="page">
+      <div class="page-heading"><div><span class="eyebrow">For owners</span><h2>List with Alfrzo</h2><p>Add your room and receive booking requests from interested users.</p></div></div>
+      <div class="owner-layout">
+        <form id="listingForm" class="owner-form" onsubmit="submitListing(event)">
+          <input type="hidden" id="editId">
+          <div class="form-section"><h3>Property basics</h3><div class="form-grid">
+            <label>Listing title<input id="fTitle" required placeholder="e.g. Spacious room near metro"></label>
+            <label>State<select id="fState" required onchange="populateOwnerCities()"><option value="">Select state</option><option>Karnataka</option><option>Maharashtra</option><option>Delhi</option><option>Telangana</option><option>Tamil Nadu</option><option>West Bengal</option><option>Uttar Pradesh</option><option>Gujarat</option></select></label>
+            <label>City<select id="fCity" required><option value="">Select city</option></select></label>
+            <label>Area<input id="fArea" required placeholder="e.g. Whitefield"></label>
+            <label>Monthly rent (₹)<input id="fRent" type="number" required placeholder="8000"></label>
+            <label>Deposit (₹)<input id="fDeposit" type="number" value="0"></label>
+            <label>Room type<select id="fType"><option>Private Room</option><option>Shared Room</option><option>1 BHK</option><option>2 BHK</option><option>PG</option></select></label>
+            <label>Suitable for<select id="fGender"><option value="Anyone">Anyone</option><option value="Men">Boys</option><option value="Women">Girls</option><option value="Family">Family</option></select></label>
+            <label>Furnishing<select id="fFurnishing"><option>Fully Furnished</option><option>Semi Furnished</option><option>Unfurnished</option></select></label>
+            <label>Available from<input id="fAvailable" type="date"></label>
+          </div></div>
+          <div class="form-section"><h3>Contact & property details</h3><div class="form-grid">
+            <label>Phone<input id="fPhone" type="tel" placeholder="+91"></label>
+            <label>Main image URL<input id="fImage" placeholder="https://..."></label>
+            <label>More photo URLs<input id="fPhotos" placeholder="URL, URL, URL"></label>
+            <label>Video / virtual tour URL<input id="fVideo" placeholder="https://..."></label>
+            <label>Facilities<input id="fFacilities" placeholder="WiFi, AC, Washing Machine"></label>
+            <label>Nearby places<input id="fNearby" placeholder="Metro, college, mall"></label>
+            <label>Rules<input id="fRules" placeholder="No smoking, visitors allowed..."></label>
+            <label class="full">Description<textarea id="fDesc" rows="4" placeholder="Tell users what makes this place useful."></textarea></label>
+          </div></div>
+          <div class="form-actions"><button type="button" class="secondary-btn" onclick="showSection('home')">Cancel</button><button class="primary-btn" id="listingSubmit">Publish listing</button></div>
+        </form>
+        <aside class="owner-side"><div class="owner-preview"><span class="preview-icon">✓</span><h3>What owners get</h3><ul><li>Show your property to local room seekers</li><li>Receive booking requests</li><li>Direct call & WhatsApp contact</li><li>Edit or remove your listing</li><li>Verified badge when eligible</li></ul></div><div class="owner-note"><strong>Safety first</strong><p>Only share contact details you are comfortable publishing. Never add bank passwords or private keys.</p></div></aside>
+      </div>
+    </section>
+  </main>
+
+  <!-- ROOM MODAL -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeModal()"></div>
+    <article class="room-modal">
+      <button class="modal-close" onclick="closeModal()">×</button>
+      <div id="modalGallery" class="modal-gallery"></div>
+      <div class="modal-body">
+        <div class="modal-top"><span id="modalType" class="tag"></span><span id="modalVerified" class="verified"></span></div>
+        <h2 id="modalTitle"></h2><p id="modalArea" class="muted"></p>
+        <div id="modalPrice" class="modal-price"></div>
+        <div id="modalTotal" class="muted"></div>
+        <div id="modalTags" class="tag-list"></div>
+        <p id="modalDesc"></p>
+        <div class="detail-box"><strong>Deposit</strong><span id="modalDeposit"></span></div>
+        <div class="detail-box"><strong>Nearby</strong><span id="modalNearby"></span></div>
+        <div class="detail-box"><strong>Rules</strong><span id="modalRules"></span></div>
+        <div class="modal-actions"><button id="modalWa" class="wa-btn">WhatsApp</button><button id="modalCall" class="secondary-btn">Call</button><button id="modalSave" class="secondary-btn">♡ Save</button><button id="modalCompare" class="secondary-btn">Compare</button><button id="modalBook" class="primary-btn">Request to Book</button></div>
+        <div class="reviews"><h3>Reviews</h3><div id="reviewArea"></div></div>
+      </div>
+    </article>
   </div>
 
-  <nav>
-    <a href="#rooms">Explore</a>
-    <a href="#saved">♡ Saved</a>
-    <a href="#dashboard">Dashboard</a>
-    <a href="#owner">List a Room</a>
+  <!-- MENU -->
+  <div id="menuDrawer" class="drawer hidden">
+    <div class="drawer-backdrop" onclick="closeMenu()"></div>
+    <aside class="drawer-panel">
+      <div class="drawer-head"><h2>Menu</h2><button onclick="closeMenu()">×</button></div>
+      <div class="drawer-user"><div class="big-avatar">◯</div><div><strong id="drawerName">Guest</strong><p id="drawerLogin">Login to continue</p></div></div>
+      <button onclick="showFromMenu('support')">♧ <span>Support</span><i>›</i></button>
+      <button onclick="showFromMenu('saved')">♡ <span>Shortlist</span><i>›</i></button>
+      <button onclick="showFromMenu('profile')">♙ <span>Profile</span><i>›</i></button>
+      <button onclick="showFromMenu('bookings')">▣ <span>Bookings</span><i>›</i></button>
+      <div class="drawer-divider"></div>
+      <button onclick="showFromMenu('refer')">♧ <span>Refer a friend</span><b class="green-badge">Earn</b></button>
+      <button onclick="openOwnerFromMenu()">▤ <span>List with us</span><i>›</i></button>
+      <div class="drawer-divider"></div>
+      <button class="drawer-login" onclick="openAuth()">↪ &nbsp; Login / Signup</button>
+    </aside>
+  </div>
+
+  <!-- AUTH -->
+  <div id="authModal" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeAuth()"></div>
+    <article class="auth-card">
+      <button class="modal-close" onclick="closeAuth()">×</button>
+      <div class="auth-logo"><span class="brand-mark">A</span> alfrzo</div>
+      <h2 id="authTitle">Welcome back</h2><p id="authHint">Login to save rooms and manage bookings.</p>
+      <form onsubmit="submitAuth(event)"><input id="authEmail" type="email" placeholder="Email address" required><input id="authPassword" type="password" placeholder="Password" required minlength="6"><div id="authMsg" class="form-msg"></div><button class="primary-btn full-btn">Continue</button></form>
+      <p class="auth-switch">New to Alfrzo? <button onclick="switchAuth()">Create account</button></p>
+    </article>
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="active" data-page="home" onclick="showSection('home')"><span>⌂</span>Explore</button>
+    <button data-page="saved" onclick="showSection('saved')"><span>♡</span>Wishlist</button>
+    <button data-page="support" onclick="showSection('support')"><span>♧</span>Support</button>
+    <button data-page="profile" onclick="showSection('profile')"><span>◯</span>Profile</button>
   </nav>
 
-  <div class="head-actions">
-    <button class="theme" onclick="toggleTheme()">🌙</button>
-    <button class="login-mini" onclick="openAuth()">Login</button>
-  </div>
-
-</header>
-
-
-<!-- ================= HERO ================= -->
-
-<section class="hero">
-
-  <div class="hero-content">
-
-    <div class="hero-badge">
-      🏠 ROOMS • PG • FLATS
-    </div>
-
-    <h1>
-      Find a place<br>
-      <span>you'll love.</span>
-    </h1>
-
-    <p>
-      Discover rooms, PGs and flats across India.
-      Compare rent, facilities and location before you choose.
-    </p>
-
-    <div class="hero-points">
-      <span>✓ Verified listings</span>
-      <span>✓ Direct owner contact</span>
-      <span>✓ Save favourites</span>
-    </div>
-
-  </div>
-
-
-  <!-- SEARCH BOX -->
-
-  <div class="search-box">
-
-    <div class="search-title">
-      <span>🔎</span>
-      <div>
-        <h2>Find your next place</h2>
-        <p>Search rooms across India</p>
-      </div>
-    </div>
-
-
-    <!-- COUNTRY -->
-
-    <label>Country</label>
-
-    <select id="country">
-      <option value="India">🇮🇳 India</option>
-    </select>
-
-
-    <!-- STATE -->
-
-    <label>State</label>
-
-    <select id="state">
-      <option value="">Select state</option>
-
-      <option>Andhra Pradesh</option>
-      <option>Arunachal Pradesh</option>
-      <option>Assam</option>
-      <option>Bihar</option>
-      <option>Chhattisgarh</option>
-      <option>Goa</option>
-      <option>Gujarat</option>
-      <option>Haryana</option>
-      <option>Himachal Pradesh</option>
-      <option>Jharkhand</option>
-      <option>Karnataka</option>
-      <option>Kerala</option>
-      <option>Madhya Pradesh</option>
-      <option>Maharashtra</option>
-      <option>Manipur</option>
-      <option>Meghalaya</option>
-      <option>Mizoram</option>
-      <option>Nagaland</option>
-      <option>Odisha</option>
-      <option>Punjab</option>
-      <option>Rajasthan</option>
-      <option>Sikkim</option>
-      <option>Tamil Nadu</option>
-      <option>Telangana</option>
-      <option>Tripura</option>
-      <option>Uttar Pradesh</option>
-      <option>Uttarakhand</option>
-      <option>West Bengal</option>
-
-      <option>Delhi</option>
-      <option>Jammu and Kashmir</option>
-      <option>Ladakh</option>
-    </select>
-
-
-    <!-- CITY -->
-
-    <label>City</label>
-
-    <select id="city">
-      <option value="">Select city</option>
-    </select>
-
-
-    <div class="row">
-
-      <div>
-        <label>Maximum Rent</label>
-        <input
-          id="maxRent"
-          type="number"
-          min="0"
-          placeholder="₹10,000"
-        >
-      </div>
-
-      <div>
-        <label>Room Type</label>
-
-        <select id="type">
-          <option value="">Any type</option>
-          <option>Single Room</option>
-          <option>Shared Room</option>
-          <option>PG</option>
-          <option>1BHK</option>
-          <option>2BHK</option>
-        </select>
-
-      </div>
-
-    </div>
-
-
-    <input
-      id="location"
-      type="hidden"
-      value=""
-    >
-
-
-    <!-- FACILITIES -->
-
-    <div class="filter-title">
-      Facilities
-    </div>
-
-    <div class="checks">
-
-      <label>
-        <input
-          class="facility"
-          value="Wi-Fi"
-          type="checkbox"
-        >
-        Wi-Fi
-      </label>
-
-      <label>
-        <input
-          class="facility"
-          value="AC"
-          type="checkbox"
-        >
-        AC
-      </label>
-
-      <label>
-        <input
-          class="facility"
-          value="Attached Bathroom"
-          type="checkbox"
-        >
-        Attached Bath
-      </label>
-
-      <label>
-        <input
-          class="facility"
-          value="Parking"
-          type="checkbox"
-        >
-        Parking
-      </label>
-
-      <label>
-        <input
-          class="facility"
-          value="Food"
-          type="checkbox"
-        >
-        Food
-      </label>
-
-    </div>
-
-
-    <button
-      class="search-btn"
-      onclick="searchRooms()"
-    >
-      🔍 Find Rooms
-    </button>
-
-    <button
-      class="secondary"
-      onclick="clearFilters()"
-    >
-      Reset
-    </button>
-
-  </div>
-
-</section>
-
-
-<!-- ================= POPULAR CITIES ================= -->
-
-<section class="cities-section">
-
-  <div class="section-heading">
-
-    <div>
-      <span class="eyebrow">EXPLORE INDIA</span>
-
-      <h2>Popular cities</h2>
-
-      <p>
-        Choose a city and discover available rooms.
-      </p>
-    </div>
-
-  </div>
-
-
-  <div class="city-grid">
-
-
-    <button
-      class="city-card"
-      data-city="Bengaluru"
-      data-state="Karnataka"
-    >
-
-      <img
-        src="https://images.unsplash.com/photo-1596176530529-78163a4f7af2?auto=format&fit=crop&w=900&q=80"
-        alt="Bengaluru"
-      >
-
-      <div class="city-overlay">
-        <strong>Bengaluru</strong>
-        <span>Karnataka</span>
-      </div>
-
-    </button>
-
-
-    <button
-      class="city-card"
-      data-city="Mumbai"
-      data-state="Maharashtra"
-    >
-
-      <img
-        src="https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&w=900&q=80"
-        alt="Mumbai"
-      >
-
-      <div class="city-overlay">
-        <strong>Mumbai</strong>
-        <span>Maharashtra</span>
-      </div>
-
-    </button>
-
-
-    <button
-      class="city-card"
-      data-city="Delhi"
-      data-state="Delhi"
-    >
-
-      <img
-        src="https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&w=900&q=80"
-        alt="Delhi"
-      >
-
-      <div class="city-overlay">
-        <strong>Delhi</strong>
-        <span>Delhi</span>
-      </div>
-
-    </button>
-
-
-    <button
-      class="city-card"
-      data-city="Hyderabad"
-      data-state="Telangana"
-    >
-
-      <img
-        src="https://images.unsplash.com/photo-1572449043410-7b8c9b3a7c3c?auto=format&fit=crop&w=900&q=80"
-        alt="Hyderabad"
-      >
-
-      <div class="city-overlay">
-        <strong>Hyderabad</strong>
-        <span>Telangana</span>
-      </div>
-
-    </button>
-
-
-    <button
-      class="city-card"
-      data-city="Pune"
-      data-state="Maharashtra"
-    >
-
-      <img
-        src="https://images.unsplash.com/photo-1605640840605-14ac1855827b?auto=format&fit=crop&w=900&q=80"
-        alt="Pune"
-      >
-
-      <div class="city-overlay">
-        <strong>Pune</strong>
-        <span>Maharashtra</span>
-      </div>
-
-    </button>
-
-
-    <button
-      class="city-card"
-      data-city="Chennai"
-      data-state="Tamil Nadu"
-    >
-
-      <img
-        src="https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=900&q=80"
-        alt="Chennai"
-      >
-
-      <div class="city-overlay">
-        <strong>Chennai</strong>
-        <span>Tamil Nadu</span>
-      </div>
-
-    </button>
-
-  </div>
-
-</section>
-
-
-<!-- ================= ROOMS ================= -->
-
-<main id="rooms">
-
-  <div class="section-head">
-
-    <div>
-      <span class="eyebrow">AVAILABLE NOW</span>
-
-      <h2>Available rooms</h2>
-
-      <p id="resultText">
-        Loading listings...
-      </p>
-    </div>
-
-
-    <select
-      id="sort"
-      onchange="render()"
-    >
-
-      <option value="recommended">
-        Recommended
-      </option>
-
-      <option value="low">
-        Rent: Low to High
-      </option>
-
-      <option value="high">
-        Rent: High to Low
-      </option>
-
-    </select>
-
-  </div>
-
-
-  <div
-    id="roomGrid"
-    class="grid"
-  ></div>
-
-</main>
-
-
-<!-- ================= SAVED ================= -->
-
-<section
-  id="saved"
-  class="saved"
->
-
-  <div class="section-heading">
-
-    <div>
-      <span class="eyebrow">YOUR FAVOURITES</span>
-
-      <h2>♡ Saved rooms</h2>
-
-      <p>
-        Rooms you saved for later.
-      </p>
-    </div>
-
-  </div>
-
-  <div
-    id="savedGrid"
-    class="grid"
-  ></div>
-
-</section>
-
-
-<!-- ================= DASHBOARD ================= -->
-
-<section
-  id="dashboard"
-  class="dashboard"
->
-
-  <div class="section-heading">
-
-    <div>
-      <span class="eyebrow">ACCOUNT</span>
-
-      <h2>My Dashboard</h2>
-    </div>
-
-  </div>
-
-
-  <div class="userbar">
-
-    <span id="userStatus">
-      Not logged in
-    </span>
-
-    <button onclick="openAuth()">
-      Login / Sign up
-    </button>
-
-  </div>
-
-
-  <div class="stats">
-
-    <div>
-      <strong id="statListings">0</strong>
-      <span>My Listings</span>
-    </div>
-
-    <div>
-      <strong id="statSaved">0</strong>
-      <span>Saved Rooms</span>
-    </div>
-
-    <div>
-      <strong id="statReports">0</strong>
-      <span>Reports</span>
-    </div>
-
-    <div>
-      <strong id="statBookings">0</strong>
-      <span>Bookings</span>
-    </div>
-
-  </div>
-
-</section>
-
-
-<!-- ================= OWNER ================= -->
-
-<section
-  id="owner"
-  class="owner"
->
-
-  <div class="section-heading">
-
-    <div>
-      <span class="eyebrow">FOR OWNERS</span>
-
-      <h2>List your room</h2>
-
-      <p>
-        Add your property and connect directly with people looking for a room.
-      </p>
-    </div>
-
-  </div>
-
-
-  <form id="listingForm">
-
-    <input
-      id="editId"
-      type="hidden"
-    >
-
-
-    <div class="row">
-
-      <input
-        required
-        id="fTitle"
-        placeholder="Listing title"
-      >
-
-      <input
-        required
-        id="fArea"
-        placeholder="Area, City"
-      >
-
-    </div>
-
-
-    <div class="row">
-
-      <input
-        required
-        id="fRent"
-        type="number"
-        min="0"
-        placeholder="Monthly rent ₹"
-      >
-
-      <input
-        id="fDeposit"
-        type="number"
-        min="0"
-        placeholder="Security deposit ₹"
-      >
-
-    </div>
-
-
-    <div class="row">
-
-      <input
-        id="fElectricity"
-        placeholder="Electricity charge"
-      >
-
-      <input
-        id="fWater"
-        placeholder="Water charge"
-      >
-
-      <input
-        id="fWifiCharge"
-        placeholder="Wi-Fi charge"
-      >
-
-    </div>
-
-
-    <div class="row">
-
-      <select id="fType">
-
-        <option>Single Room</option>
-        <option>Shared Room</option>
-        <option>PG</option>
-        <option>1BHK</option>
-        <option>2BHK</option>
-
-      </select>
-
-
-      <select id="fGender">
-
-        <option value="">
-          Suitable for
-        </option>
-
-        <option>Male</option>
-        <option>Female</option>
-        <option>Any</option>
-
-      </select>
-
-
-      <select id="fFurnishing">
-
-        <option value="">
-          Furnishing
-        </option>
-
-        <option>Fully Furnished</option>
-        <option>Semi Furnished</option>
-        <option>Unfurnished</option>
-
-      </select>
-
-    </div>
-
-
-    <input
-      id="fAvailable"
-      placeholder="Availability e.g. Available now"
-    >
-
-
-    <input
-      required
-      id="fPhone"
-      placeholder="WhatsApp number e.g. 919876543210"
-    >
-
-
-    <input
-      id="fImage"
-      placeholder="Main photo URL"
-    >
-
-
-    <input
-      id="fPhotos"
-      placeholder="Other photo URLs separated by comma"
-    >
-
-
-    <input
-      id="fVideo"
-      placeholder="Video URL (optional)"
-    >
-
-
-    <input
-      id="fFacilities"
-      placeholder="Facilities: Wi-Fi, AC, Parking, Food"
-    >
-
-
-    <input
-      id="fNearby"
-      placeholder="Nearby: Metro, Bus Stop, College, Market"
-    >
-
-
-    <textarea
-      id="fRules"
-      placeholder="House rules"
-    ></textarea>
-
-
-    <textarea
-      id="fDesc"
-      placeholder="Short description"
-    ></textarea>
-
-
-    <div class="form-actions">
-
-      <button
-        id="listingSubmit"
-        type="submit"
-      >
-        Publish Online Listing
-      </button>
-
-      <button
-        id="cancelEdit"
-        type="button"
-        class="secondary"
-        style="display:none"
-      >
-        Cancel Edit
-      </button>
-
-    </div>
-
-  </form>
-
-</section>
-
-
-<!-- ================= MY LISTINGS ================= -->
-
-<section class="my-listings">
-
-  <div class="section-heading">
-
-    <div>
-      <span class="eyebrow">OWNER AREA</span>
-
-      <h2>My listings</h2>
-
-    </div>
-
-  </div>
-
-  <div id="myListings"></div>
-
-</section>
-
-
-<!-- ================= ROOM MODAL ================= -->
-
-<div
-  id="modal"
-  class="modal"
-  onclick="closeModal(event)"
->
-
-  <div
-    class="modal-card"
-    onclick="event.stopPropagation()"
-  >
-
-    <button
-      class="close"
-      onclick="closeModal()"
-    >
-      ×
-    </button>
-
-
-    <div
-      id="modalGallery"
-      class="modal-gallery"
-    ></div>
-
-
-    <img
-      id="modalImg"
-      alt="Room"
-    >
-
-
-    <div class="modal-body">
-
-      <div
-        id="modalType"
-        class="muted"
-      ></div>
-
-
-      <h2 id="modalTitle"></h2>
-
-
-      <p
-        id="modalArea"
-        class="muted"
-      ></p>
-
-
-      <div
-        id="modalPrice"
-        class="price"
-      ></div>
-
-
-      <div
-        id="modalTotal"
-        class="total-cost"
-      ></div>
-
-
-      <div
-        id="modalTags"
-        class="tags"
-      ></div>
-
-
-      <p id="modalDesc"></p>
-
-
-      <p
-        id="modalDeposit"
-        class="muted"
-      ></p>
-
-
-      <div class="modal-info">
-
-        <div>
-          <strong>📍 Nearby</strong>
-          <p id="modalNearby"></p>
-        </div>
-
-        <div>
-          <strong>📋 Rules</strong>
-          <p id="modalRules"></p>
-        </div>
-
-      </div>
-
-
-      <div
-        id="modalMap"
-        class="map-box"
-      ></div>
-
-
-      <div class="modal-actions">
-
-        <a
-          id="modalWa"
-          class="wa"
-          target="_blank"
-          rel="noopener"
-        >
-          💬 WhatsApp
-        </a>
-
-
-        <a
-          id="modalCall"
-          class="call"
-        >
-          📞 Call
-        </a>
-
-
-        <button
-          id="modalSave"
-          class="save"
-        >
-          ♡ Save
-        </button>
-
-
-        <button
-          id="modalCompare"
-          class="save"
-        >
-          ⚖ Compare
-        </button>
-
-
-        <button
-          id="modalBook"
-          class="book-btn"
-        >
-          📅 Book
-        </button>
-
-
-        <button
-          id="modalReport"
-          class="report"
-        >
-          🚩 Report
-        </button>
-
-      </div>
-
-
-      <!-- REVIEWS -->
-
-      <div class="reviews">
-
-        <h3>Reviews</h3>
-
-        <div
-          id="reviewArea"
-        ></div>
-
-      </div>
-
-    </div>
-
-  </div>
-
-</div>
-
-
-<!-- ================= COMPARE ================= -->
-
-<section
-  id="compareSection"
-  class="compare-section"
->
-
-  <div class="section-heading">
-
-    <div>
-      <span class="eyebrow">COMPARE</span>
-
-      <h2>Compare rooms</h2>
-
-      <p>
-        Compare rent and facilities before deciding.
-      </p>
-    </div>
-
-  </div>
-
-
-  <div
-    id="compareGrid"
-    class="compare-grid"
-  ></div>
-
-</section>
-
-
-<!-- ================= AUTH ================= -->
-
-<div
-  id="authModal"
-  class="modal"
->
-
-  <div class="auth-card">
-
-    <button
-      class="close"
-      onclick="closeAuth()"
-    >
-      ×
-    </button>
-
-
-    <div class="auth-logo">
-      A
-    </div>
-
-
-    <h2 id="authTitle">
-      Login to Alfrzo
-    </h2>
-
-
-    <p
-      id="authHint"
-      class="muted"
-    >
-      Use email and password.
-    </p>
-
-
-    <input
-      id="authEmail"
-      type="email"
-      placeholder="Email"
-    >
-
-
-    <input
-      id="authPassword"
-      type="password"
-      placeholder="Password"
-    >
-
-
-    <button onclick="submitAuth()">
-      Continue
-    </button>
-
-
-    <button
-      class="secondary"
-      onclick="switchAuth()"
-    >
-      Create account
-    </button>
-
-
-    <p
-      id="authMsg"
-      class="auth-msg"
-    ></p>
-
-  </div>
-
-</div>
-
-
-<!-- ================= FOOTER ================= -->
-
-<footer>
-
-  <div class="footer-brand">
-    <strong>Alfrzo</strong>
-    <span>Find your place.</span>
-  </div>
-
-  <p>
-    © 2026 Alfrzo • Rooms, PGs & Flats across India
-  </p>
-
-</footer>
-
-
-<!-- ================= CITY / STATE LOGIC ================= -->
-
-<script>
-
-const cityData = {
-
-  "Andhra Pradesh": [
-    "Visakhapatnam",
-    "Vijayawada",
-    "Guntur",
-    "Tirupati"
-  ],
-
-  "Assam": [
-    "Guwahati",
-    "Dibrugarh",
-    "Silchar"
-  ],
-
-  "Bihar": [
-    "Patna",
-    "Gaya",
-    "Muzaffarpur"
-  ],
-
-  "Delhi": [
-    "New Delhi",
-    "Delhi"
-  ],
-
-  "Goa": [
-    "Panaji",
-    "Vasco da Gama",
-    "Margao"
-  ],
-
-  "Gujarat": [
-    "Ahmedabad",
-    "Surat",
-    "Vadodara",
-    "Rajkot"
-  ],
-
-  "Haryana": [
-    "Gurugram",
-    "Faridabad",
-    "Panipat"
-  ],
-
-  "Jharkhand": [
-    "Ranchi",
-    "Jamshedpur",
-    "Dhanbad",
-    "Bokaro"
-  ],
-
-  "Karnataka": [
-    "Bengaluru",
-    "Mysuru",
-    "Mangaluru",
-    "Hubballi",
-    "Belagavi",
-    "Hoskote"
-  ],
-
-  "Kerala": [
-    "Kochi",
-    "Thiruvananthapuram",
-    "Kozhikode"
-  ],
-
-  "Madhya Pradesh": [
-    "Bhopal",
-    "Indore",
-    "Jabalpur",
-    "Gwalior"
-  ],
-
-  "Maharashtra": [
-    "Mumbai",
-    "Pune",
-    "Nagpur",
-    "Nashik",
-    "Thane"
-  ],
-
-  "Odisha": [
-    "Bhubaneswar",
-    "Cuttack",
-    "Rourkela"
-  ],
-
-  "Punjab": [
-    "Ludhiana",
-    "Amritsar",
-    "Jalandhar",
-    "Mohali"
-  ],
-
-  "Rajasthan": [
-    "Jaipur",
-    "Jodhpur",
-    "Udaipur",
-    "Kota",
-    "Ajmer"
-  ],
-
-  "Tamil Nadu": [
-    "Chennai",
-    "Coimbatore",
-    "Madurai",
-    "Salem"
-  ],
-
-  "Telangana": [
-    "Hyderabad",
-    "Warangal",
-    "Nizamabad"
-  ],
-
-  "Uttar Pradesh": [
-    "Lucknow",
-    "Noida",
-    "Ghaziabad",
-    "Kanpur",
-    "Agra",
-    "Varanasi"
-  ],
-
-  "Uttarakhand": [
-    "Dehradun",
-    "Haridwar",
-    "Haldwani"
-  ],
-
-  "West Bengal": [
-    "Kolkata",
-    "Siliguri",
-    "Durgapur"
-  ],
-
-  "Chhattisgarh": [
-    "Raipur",
-    "Bhilai",
-    "Bilaspur"
-  ]
-
-};
-
-
-const stateSelect =
-  document.getElementById("state");
-
-const citySelect =
-  document.getElementById("city");
-
-const locationInput =
-  document.getElementById("location");
-
-
-stateSelect.addEventListener(
-  "change",
-  function(){
-
-    const state = this.value;
-
-    citySelect.innerHTML =
-      '<option value="">Select city</option>';
-
-    if(cityData[state]){
-
-      cityData[state].forEach(
-        function(city){
-
-          const option =
-            document.createElement("option");
-
-          option.value = city;
-          option.textContent = city;
-
-          citySelect.appendChild(option);
-
-        }
-      );
-
-    }
-
-    locationInput.value = state;
-
-  }
-);
-
-
-citySelect.addEventListener(
-  "change",
-  function(){
-
-    const city = this.value;
-    const state = stateSelect.value;
-
-    if(city){
-
-      locationInput.value =
-        city + ", " + state;
-
-    }
-
-  }
-);
-
-
-/* Popular city cards */
-
-document
-  .querySelectorAll(".city-card")
-  .forEach(function(card){
-
-    card.addEventListener(
-      "click",
-      function(){
-
-        const city =
-          this.dataset.city;
-
-        const state =
-          this.dataset.state;
-
-
-        stateSelect.value = state;
-
-
-        citySelect.innerHTML =
-          '<option value="">Select city</option>';
-
-
-        if(cityData[state]){
-
-          cityData[state].forEach(
-            function(item){
-
-              const option =
-                document.createElement("option");
-
-              option.value = item;
-              option.textContent = item;
-
-              if(item === city){
-                option.selected = true;
-              }
-
-              citySelect.appendChild(option);
-
-            }
-          );
-
-        }
-
-
-        locationInput.value =
-          city + ", " + state;
-
-
-        document
-          .getElementById("rooms")
-          .scrollIntoView({
-            behavior:"smooth"
-          });
-
-        searchRooms();
-
-      }
-
-    );
-
-  });
-
-</script>
-
-
-<!-- MAIN APP SCRIPT -->
-
-<script src="script.js"></script>
-
+  <script src="config.js"></script>
+  <script src="script.js"></script>
 </body>
-</html>
+  </html>
